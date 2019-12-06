@@ -240,16 +240,37 @@ function removeHook (state, name, method) {
 
 const core = __webpack_require__(179);
 const github = __webpack_require__(376);
+const path = __webpack_require__(277);
+
+console.log('This is a GraphQL Analyzis action');
+
+core.log('starting graphql-analyzis action');
+
+const configFilePath = path.join('.graphql-analyzer.json');
+
+core.log(`config file path: ${configFilePath}`);
+
+const configContent = fs.readFileSync(configFilePath, 'utf8');
+
+core.log(`config content: ${configContent}`);
+
+const config = JSON.parse(configContent);
+
+const schemaFilePath = path.join(config.schemaFile)
+
+core.log(`schema file path: ${schemaFilePath}`);
+
+const schema = fs.readFileSync(schemaFilePath, 'utf-8');
+
+core.log(`schema contents: ${schema}`)
 
 try {
   // `who-to-greet` input defined in action metadata file
   const nameToGreet = core.getInput('who-to-greet');
-  console.log(`Hello ${nameToGreet}!`);
-  const time = (new Date()).toTimeString();
-  core.setOutput("time", time);
+  console.log(`Hello::: ${nameToGreet}!`);
   // Get the JSON webhook payload for the event that triggered the workflow
   const payload = JSON.stringify(github.context.payload, undefined, 2)
-  console.log(`The event payload: ${payload}`);
+  // console.log(`The event payload: ${payload}`);
 } catch (error) {
   core.setFailed(error.message);
 }
