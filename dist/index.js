@@ -241,6 +241,7 @@ function removeHook (state, name, method) {
 const core = __webpack_require__(179);
 const github = __webpack_require__(376);
 const path = __webpack_require__(277);
+const fs = __webpack_require__(747);
 
 console.log('This is a GraphQL Analyzis action');
 
