@@ -255,7 +255,7 @@ console.log(`config content: ${configContent}`);
 
 const config = JSON.parse(configContent);
 
-const schemaFilePath = path.join(config.schemaFile)
+const schemaFilePath = path.join(config.schemaPath)
 
 console.log(`schema file path: ${schemaFilePath}`);
 
