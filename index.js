@@ -1,35 +1,73 @@
-const core = require('@actions/core');
-const github = require('@actions/github');
+// const core = require('@actions/core');
+// const github = require('@actions/github');
 const path = require('path');
 const fs = require('fs');
-
-console.log('This is a GraphQL Analyzis action');
+const execSync = require('child_process').execSync;
+const fork = require('child_process').fork;
 
 const configFilePath = path.join('.graphql-analyzer.json');
 
-console.log(`config file path: ${configFilePath}`);
-
 const configContent = fs.readFileSync(configFilePath, 'utf8');
-
-console.log(`config content: ${configContent}`);
 
 const config = JSON.parse(configContent);
 
-const schemaFilePath = path.join(config.schemaPath)
+const executeFile = schema => {
+  const schemaFilePath = path.join(schema.path);
 
-console.log(`schema file path: ${schemaFilePath}`);
+  console.log(`analyzing schema file: ${schemaFilePath}`);
 
-const schema = fs.readFileSync(schemaFilePath, 'utf-8');
+  const schemaContent = fs.readFileSync(schemaFilePath, 'utf-8');
 
-console.log(`schema contents: ${schema}`)
-
-try {
-  // `who-to-greet` input defined in action metadata file
-  const nameToGreet = core.getInput('who-to-greet');
-  console.log(`Hello::: ${nameToGreet}!`);
-  // Get the JSON webhook payload for the event that triggered the workflow
-  const payload = JSON.stringify(github.context.payload, undefined, 2)
-  // console.log(`The event payload: ${payload}`);
-} catch (error) {
-  core.setFailed(error.message);
+  console.log(`schema content from file: ${schemaContent}`);
+  console.log('TODO: Implement schema analyzis');
 }
+
+const fetchSchemaFromServer = url => {
+  const cmd = `get-graphql-schema ${url}`;
+  setTimeout(() => {
+    const schemaContent = execSync(cmd);
+
+    console.log(`schema content from server: ${schemaContent}`);
+  }, 3000);
+}
+
+const executeServer = schema => {
+  console.log(`starting graphql server: ${schema.graphqlEndpoint}`);
+
+  // "beforeStartUp" can be an array of commands, or a single string command
+  const commands = [schema.beforeStartUp].flatMap(maybeList => maybeList)
+
+  commands
+    .map(command => {
+      try {
+        console.log(`running ${command}`)
+        return execSync(command);
+      } catch(err) {
+        console.log(err);
+      }
+    })
+    .map(out => out.toString())
+    .map(console.log);
+
+  const forked = fork(`${__dirname}/fork.js`);
+
+  forked.send(schema.startUpCommand);
+
+  fetchSchemaFromServer(schema.graphqlEndpoint);
+}
+
+config.schemas.forEach(schema => {
+  switch (schema.type) {
+    case 'file': {
+      executeFile(schema);
+      break;
+    }
+    case 'server': {
+      executeServer(schema);
+      break;
+    }
+    default: {
+      throw new Error(`Invalid schema type: ${schema.type}`)
+    }
+  }
+})
