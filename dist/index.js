@@ -34,7 +34,7 @@ module.exports =
 /******/ 	// the startup function
 /******/ 	function startup() {
 /******/ 		// Load entry module and return exports
-/******/ 		return __webpack_require__(56);
+/******/ 		return __webpack_require__(104);
 /******/ 	};
 /******/
 /******/ 	// run startup
@@ -43,7 +43,7 @@ module.exports =
 /************************************************************************/
 /******/ ({
 
-/***/ 56:
+/***/ 104:
 /***/ (function(__unusedmodule, __unusedexports, __webpack_require__) {
 
 // const core = require('@actions/core');
@@ -72,16 +72,27 @@ const executeFile = schema => {
 
 const fetchSchemaFromServer = url => {
   const cmd = `get-graphql-schema ${url}`;
-  setTimeout(() => {
-    const schemaContent = execSync(cmd);
 
-    console.log(`schema content from server: ${schemaContent}`);
-  }, 3000);
+  return new Promise((resolve, err) => {
+    setTimeout(() => {
+      try {
+        const schemaContent = execSync(cmd);
+
+        console.log(`schema content from server: ${schemaContent}`);
+
+        resolve()
+
+      } catch (err) {
+        reject(err)
+      }
+    }, 3000);
+  });
 }
 
-const executeServer = schema => {
+const executeServer = async schema => {
   console.log(`starting graphql server: ${schema.graphqlEndpoint}`);
-  // "startUpCommand" can be an array of commands, or a single string command
+
+  // "beforeStartUp" can be an array of commands, or a single string command
   const commands = [schema.beforeStartUp].flatMap(maybeList => maybeList)
 
   commands
@@ -89,7 +100,7 @@ const executeServer = schema => {
       try {
         console.log(`running ${command}`)
         return execSync(command);
-      } catch(err) {
+      } catch (err) {
         console.log(err);
       }
     })
@@ -100,9 +111,9 @@ const executeServer = schema => {
 
   forked.send(schema.startUpCommand);
 
-  console.log('server sould be up and running')
+  await fetchSchemaFromServer(schema.graphqlEndpoint);
 
-  fetchSchemaFromServer(schema.graphqlEndpoint);
+  forked.kill('SIGINT');
 }
 
 config.schemas.forEach(schema => {

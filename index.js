@@ -24,14 +24,24 @@ const executeFile = schema => {
 
 const fetchSchemaFromServer = url => {
   const cmd = `get-graphql-schema ${url}`;
-  setTimeout(() => {
-    const schemaContent = execSync(cmd);
 
-    console.log(`schema content from server: ${schemaContent}`);
-  }, 3000);
+  return new Promise((resolve, err) => {
+    setTimeout(() => {
+      try {
+        const schemaContent = execSync(cmd);
+
+        console.log(`schema content from server: ${schemaContent}`);
+
+        resolve()
+
+      } catch (err) {
+        reject(err)
+      }
+    }, 3000);
+  });
 }
 
-const executeServer = schema => {
+const executeServer = async schema => {
   console.log(`starting graphql server: ${schema.graphqlEndpoint}`);
 
   // "beforeStartUp" can be an array of commands, or a single string command
@@ -42,7 +52,7 @@ const executeServer = schema => {
       try {
         console.log(`running ${command}`)
         return execSync(command);
-      } catch(err) {
+      } catch (err) {
         console.log(err);
       }
     })
@@ -53,7 +63,9 @@ const executeServer = schema => {
 
   forked.send(schema.startUpCommand);
 
-  fetchSchemaFromServer(schema.graphqlEndpoint);
+  await fetchSchemaFromServer(schema.graphqlEndpoint);
+
+  forked.kill('SIGINT');
 }
 
 config.schemas.forEach(schema => {
